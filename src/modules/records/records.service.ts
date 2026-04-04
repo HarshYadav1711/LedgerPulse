@@ -1,3 +1,4 @@
+import { Parser } from "json2csv";
 import { Prisma, RecordType } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
@@ -6,7 +7,9 @@ import {
   endOfUtcDay,
   startOfUtcDay,
 } from "./records.filters";
-import type { CreateRecordBody, ListRecordsQuery, UpdateRecordBody } from "./records.schemas";
+import type { CreateRecordBody, ListRecordsQuery, RecordsExportQuery, UpdateRecordBody } from "./records.schemas";
+
+const MAX_EXPORT_ROWS = 50_000;
 
 function toRecordDto(row: {
   id: string;
@@ -48,31 +51,45 @@ export async function createRecord(createdById: string, input: CreateRecordBody)
   return toRecordDto(row);
 }
 
-function buildListWhere(query: ListRecordsQuery): Prisma.FinancialRecordWhereInput {
+function listFiltersFromQuery(query: ListRecordsQuery) {
   return buildFinancialRecordWhere({
     from: query.from,
     to: query.to,
     category: query.category,
     type: query.type as RecordType | undefined,
+    search: query.search,
+  });
+}
+
+function exportFiltersFromQuery(query: RecordsExportQuery) {
+  return buildFinancialRecordWhere({
+    from: query.from,
+    to: query.to,
+    category: query.category,
+    type: query.type as RecordType | undefined,
+    search: query.search,
   });
 }
 
 export async function listRecords(query: ListRecordsQuery) {
-  const where = buildListWhere(query);
-  const [items, total] = await Promise.all([
+  const where = listFiltersFromQuery(query);
+  const skip = (query.page - 1) * query.limit;
+  const [rows, total] = await Promise.all([
     prisma.financialRecord.findMany({
       where,
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       take: query.limit,
-      skip: query.offset,
+      skip,
     }),
     prisma.financialRecord.count({ where }),
   ]);
+  const totalPages = total === 0 ? 0 : Math.ceil(total / query.limit);
   return {
-    items: items.map(toRecordDto),
-    total,
+    page: query.page,
     limit: query.limit,
-    offset: query.offset,
+    total,
+    totalPages,
+    data: rows.map(toRecordDto),
   };
 }
 
@@ -118,4 +135,80 @@ export async function softDeleteRecord(id: string) {
     data: { isDeleted: true },
   });
   return toRecordDto(row);
+}
+
+type CsvRow = {
+  id: string;
+  amount: string;
+  type: string;
+  category: string;
+  date: string;
+  notes: string;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const csvFields: { label: string; value: keyof CsvRow }[] = [
+  { label: "id", value: "id" },
+  { label: "amount", value: "amount" },
+  { label: "type", value: "type" },
+  { label: "category", value: "category" },
+  { label: "date", value: "date" },
+  { label: "notes", value: "notes" },
+  { label: "createdById", value: "createdById" },
+  { label: "createdAt", value: "createdAt" },
+  { label: "updatedAt", value: "updatedAt" },
+];
+
+export async function buildFilteredRecordsCsv(query: RecordsExportQuery): Promise<{
+  csv: string;
+  filename: string;
+  rowCount: number;
+  truncated: boolean;
+}> {
+  const where = exportFiltersFromQuery(query);
+  const totalMatching = await prisma.financialRecord.count({ where });
+  const truncated = totalMatching > MAX_EXPORT_ROWS;
+  const rows = await prisma.financialRecord.findMany({
+    where,
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    take: MAX_EXPORT_ROWS,
+    select: {
+      id: true,
+      amount: true,
+      type: true,
+      category: true,
+      date: true,
+      notes: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const flat: CsvRow[] = rows.map((r) => ({
+    id: r.id,
+    amount: r.amount.toString(),
+    type: r.type,
+    category: r.category,
+    date: r.date.toISOString(),
+    notes: r.notes ?? "",
+    createdById: r.createdById,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+  }));
+
+  const parser = new Parser<CsvRow>({ fields: csvFields, defaultValue: "" });
+  const body = parser.parse(flat.length > 0 ? flat : []);
+  const csv = `\uFEFF${body}`;
+  const stamp = new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
+  const filename = `ledger-pulse-records_${stamp}.csv`;
+
+  return {
+    csv,
+    filename,
+    rowCount: flat.length,
+    truncated,
+  };
 }

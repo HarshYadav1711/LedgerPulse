@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { sendSuccess } from "../../utils/http";
-import type { ListRecordsQuery } from "./records.schemas";
+import type { ListRecordsQuery, RecordsExportQuery } from "./records.schemas";
 import * as recordsService from "./records.service";
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
@@ -12,8 +12,19 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const query = req.query as unknown as ListRecordsQuery;
-  const page = await recordsService.listRecords(query);
-  sendSuccess(res, 200, page);
+  const result = await recordsService.listRecords(query);
+  sendSuccess(res, 200, result);
+});
+
+export const exportCsv = asyncHandler(async (req: Request, res: Response) => {
+  const query = req.query as unknown as RecordsExportQuery;
+  const { csv, filename, truncated } = await recordsService.buildFilteredRecordsCsv(query);
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  if (truncated) {
+    res.setHeader("X-LedgerPulse-Export-Truncated", "true");
+  }
+  res.status(200).send(csv);
 });
 
 export const getById = asyncHandler(async (req: Request, res: Response) => {

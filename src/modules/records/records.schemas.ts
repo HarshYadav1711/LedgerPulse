@@ -68,6 +68,16 @@ export const financialRecordFiltersObjectSchema = z.object({
   type: recordTypeSchema.optional(),
 });
 
+/** Listing and CSV export: adds text search on category and notes (SQLite LIKE is ASCII case-insensitive). */
+export const recordListingFilterObjectSchema = financialRecordFiltersObjectSchema.extend({
+  search: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? undefined : v)),
+});
+
 export function refineFinancialRecordQuery<S extends z.ZodTypeAny>(schema: S) {
   return schema.refine(
     (q: z.infer<S> & { from?: Date; to?: Date }) => {
@@ -84,13 +94,17 @@ export function refineFinancialRecordQuery<S extends z.ZodTypeAny>(schema: S) {
 export const financialRecordFilterQuerySchema = refineFinancialRecordQuery(financialRecordFiltersObjectSchema);
 
 export const listRecordsQuerySchema = refineFinancialRecordQuery(
-  financialRecordFiltersObjectSchema.extend({
+  recordListingFilterObjectSchema.extend({
+    page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).default(0),
   })
 );
+
+/** Same filters as list, without pagination (used for CSV export). */
+export const recordsExportQuerySchema = refineFinancialRecordQuery(recordListingFilterObjectSchema);
 
 export type CreateRecordBody = z.infer<typeof createRecordBodySchema>;
 export type UpdateRecordBody = z.infer<typeof updateRecordBodySchema>;
 export type ListRecordsQuery = z.infer<typeof listRecordsQuerySchema>;
+export type RecordsExportQuery = z.infer<typeof recordsExportQuerySchema>;
 export type FinancialRecordFilterQuery = z.infer<typeof financialRecordFilterQuerySchema>;

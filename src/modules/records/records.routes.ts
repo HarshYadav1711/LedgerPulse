@@ -8,6 +8,7 @@ import {
   createRecordBodySchema,
   listRecordsQuerySchema,
   recordIdParamSchema,
+  recordsExportQuerySchema,
   updateRecordBodySchema,
 } from "./records.schemas";
 
@@ -19,6 +20,14 @@ recordsRouter.get(
   requirePermission(Permission.RECORDS_READ),
   validate({ query: listRecordsQuerySchema }),
   recordsController.list
+);
+
+recordsRouter.get(
+  "/export",
+  authenticate,
+  requirePermission(Permission.RECORDS_READ),
+  validate({ query: recordsExportQuerySchema }),
+  recordsController.exportCsv
 );
 
 recordsRouter.post(
