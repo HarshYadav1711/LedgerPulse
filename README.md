@@ -1,76 +1,77 @@
 # LedgerPulse
 
-Backend assessment API: JWT-authenticated personal ledger (credits/debits), balance summary, and CSV export. No frontend.
+Backend API scaffold (Express + Prisma + SQLite + Zod).
 
-## Requirements
+## Prerequisites
 
-- Node.js **24 LTS**
+- Node.js 24 LTS
 - npm
 
-## Assumptions (assignment not fully specified)
+## Setup
 
-- **Domain**: Each user owns a private ledger. **CREDIT** increases balance, **DEBIT** decreases it. Net **balance** = sum(CREDIT amounts) − sum(DEBIT amounts). Amounts are stored as decimals; API returns amounts as **strings** to avoid floating-point surprises.
-- **CSV tooling**: CSV export uses **`json2csv@6.0.0-alpha.2`**, the current published line on npm (v5 is deprecated). If you prefer a stable non-alpha release, swapping to **`@json2csv/plainjs@7`** is a small change in `export.controller.ts`.
-- **Auth**: Bearer JWT in `Authorization: Bearer <token>`, default expiry **7 days**.
-
-## Run locally (one command)
-
-1. Copy environment file: create `.env` from `.env.example` (same directory as `package.json`).
-2. Start the server:
+1. Copy `.env.example` to `.env` in the project root.
+2. Install and start:
 
 ```bash
 npm install && npm start
 ```
 
-`npm start` applies Prisma migrations to the SQLite file from `DATABASE_URL`, compiles TypeScript, and runs the API. Open **http://localhost:3000/api/docs** for Swagger UI.
+`npm start` runs database migrations, compiles TypeScript, and starts the server with `node --env-file=.env`.
 
 ## Scripts
 
-| Script        | Purpose                                      |
-|---------------|----------------------------------------------|
-| `npm start`   | Migrate + build + run API                    |
-| `npm run build` | TypeScript compile to `dist/`              |
-| `npm test`    | Jest + Supertest integration tests           |
+| Script | Description |
+|--------|-------------|
+| `npm start` | Migrate, build, run production server |
+| `npm run dev` | Migrate once, then `tsc --watch` (run server in another terminal after build) |
+| `npm run build` | Compile `src/` to `dist/` |
+| `npm run db:migrate` | Create/apply migrations (development) |
+| `npm run db:studio` | Open Prisma Studio |
 
-## API overview
+## Project layout
 
-Base path: `/api`
+```
+src/
+  config/           # Environment and app configuration
+  middleware/       # Error handling, validation helpers, etc.
+  modules/
+    auth/           # Auth routes (stub)
+    users/          # User routes (stub)
+    records/        # Records routes (stub)
+    dashboard/      # Dashboard routes (stub)
+  utils/            # Shared helpers (HTTP envelope, async handler)
+  validation/       # Optional shared Zod schemas (see `src/validation/index.ts`)
+  app.ts            # Express app factory
+  server.ts         # HTTP listener + graceful shutdown
+prisma/             # Schema and migrations
+```
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/health` | No | Liveness |
-| POST | `/auth/register` | No | Register |
-| POST | `/auth/login` | No | Login |
-| GET | `/me` | Yes | Current user |
-| GET/POST | `/entries` | Yes | List / create entries |
-| GET/PATCH/DELETE | `/entries/:id` | Yes | Read / update / delete |
-| GET | `/summary` | Yes | Totals and balance |
-| GET | `/exports/entries` | Yes | CSV download |
+## API
 
-## Response shape
+- **Health:** `GET /api/health` — process liveness (JSON envelope).
 
-JSON endpoints use:
+Module routers are mounted under `/api/auth`, `/api/users`, `/api/records`, and `/api/dashboard` with no business routes yet.
+
+## Response format
+
+JSON responses use:
 
 ```json
-{
-  "success": true,
-  "data": {},
-  "error": null
-}
+{ "success": true, "data": {}, "error": null }
 ```
 
 Errors:
 
 ```json
-{
-  "success": false,
-  "data": null,
-  "error": { "message": "...", "code": "...", "details": {} }
-}
+{ "success": false, "data": null, "error": { "message": "...", "code": "..." } }
 ```
 
-The CSV export endpoint returns `text/csv` instead of JSON.
+## TODO
 
-## Stack
+- [ ] Replace `SchemaPlaceholder` in `prisma/schema.prisma` with domain models.
+- [ ] Implement module routes, controllers, services, and Zod schemas.
+- [ ] Add authentication, tests, and API documentation as required.
 
-Express, Prisma + SQLite, Zod, JWT (jsonwebtoken), bcryptjs, swagger-jsdoc + swagger-ui-express, json2csv, Jest + Supertest.
+## License
+
+(Add your license.)

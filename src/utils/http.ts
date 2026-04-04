@@ -27,7 +27,12 @@ export function sendError(
   const body: ApiErrorBody = {
     success: false,
     data: null,
-    error: details !== undefined ? { message, code, details } : { message, code },
+    error:
+      details !== undefined
+        ? { message, code, details }
+        : code !== undefined
+          ? { message, code }
+          : { message },
   };
   res.status(status).json(body);
 }

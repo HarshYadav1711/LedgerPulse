@@ -2,13 +2,16 @@ import type { NextFunction, Request, Response } from "express";
 import type { ZodTypeAny } from "zod";
 import { ZodError } from "zod";
 
-type Schemas = {
+type SchemaMap = {
   body?: ZodTypeAny;
   query?: ZodTypeAny;
   params?: ZodTypeAny;
 };
 
-export function validate(schemas: Schemas) {
+/**
+ * Validates `body`, `query`, and/or `params` with Zod and replaces `req` slices with parsed values.
+ */
+export function validate(schemas: SchemaMap) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       if (schemas.body) {
