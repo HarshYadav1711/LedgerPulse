@@ -1,5 +1,3 @@
-// Replace `SchemaPlaceholder` with real domain models when implementing features.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model SchemaPlaceholder {
-  id String @id @default(uuid())
+enum Role {
+  viewer
+  analyst
+  admin
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(viewer)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
