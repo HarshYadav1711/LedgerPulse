@@ -54,23 +54,23 @@ export const recordIdParamSchema = z.object({
   id: z.string().uuid("Invalid record id"),
 });
 
-export const listRecordsQuerySchema = z
-  .object({
-    from: z.coerce.date().optional(),
-    to: z.coerce.date().optional(),
-    category: z
-      .string()
-      .trim()
-      .min(1)
-      .max(120)
-      .optional()
-      .transform((v) => (v === undefined || v === "" ? undefined : v)),
-    type: recordTypeSchema.optional(),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).default(0),
-  })
-  .refine(
-    (q) => {
+/** Base shape for list + dashboard query filters (extend before applying `refineFinancialRecordQuery`). */
+export const financialRecordFiltersObjectSchema = z.object({
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  category: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? undefined : v)),
+  type: recordTypeSchema.optional(),
+});
+
+export function refineFinancialRecordQuery<S extends z.ZodTypeAny>(schema: S) {
+  return schema.refine(
+    (q: z.infer<S> & { from?: Date; to?: Date }) => {
       if (q.from !== undefined && q.to !== undefined && q.from.getTime() > q.to.getTime()) {
         return false;
       }
@@ -78,7 +78,19 @@ export const listRecordsQuerySchema = z
     },
     { message: "`from` must be on or before `to`", path: ["to"] }
   );
+}
+
+/** Shared list + dashboard filters (date range, category, type). */
+export const financialRecordFilterQuerySchema = refineFinancialRecordQuery(financialRecordFiltersObjectSchema);
+
+export const listRecordsQuerySchema = refineFinancialRecordQuery(
+  financialRecordFiltersObjectSchema.extend({
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  })
+);
 
 export type CreateRecordBody = z.infer<typeof createRecordBodySchema>;
 export type UpdateRecordBody = z.infer<typeof updateRecordBodySchema>;
 export type ListRecordsQuery = z.infer<typeof listRecordsQuerySchema>;
+export type FinancialRecordFilterQuery = z.infer<typeof financialRecordFilterQuerySchema>;

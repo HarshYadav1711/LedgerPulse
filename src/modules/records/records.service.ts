@@ -1,15 +1,12 @@
 import { Prisma, RecordType } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
+import {
+  buildFinancialRecordWhere,
+  endOfUtcDay,
+  startOfUtcDay,
+} from "./records.filters";
 import type { CreateRecordBody, ListRecordsQuery, UpdateRecordBody } from "./records.schemas";
-
-function startOfUtcDay(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
-
-function endOfUtcDay(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
-}
 
 function toRecordDto(row: {
   id: string;
@@ -52,25 +49,12 @@ export async function createRecord(createdById: string, input: CreateRecordBody)
 }
 
 function buildListWhere(query: ListRecordsQuery): Prisma.FinancialRecordWhereInput {
-  const where: Prisma.FinancialRecordWhereInput = {
-    isDeleted: false,
-  };
-  if (query.from !== undefined || query.to !== undefined) {
-    where.date = {};
-    if (query.from !== undefined) {
-      where.date.gte = startOfUtcDay(query.from);
-    }
-    if (query.to !== undefined) {
-      where.date.lte = endOfUtcDay(query.to);
-    }
-  }
-  if (query.category !== undefined) {
-    where.category = query.category;
-  }
-  if (query.type !== undefined) {
-    where.type = query.type as RecordType;
-  }
-  return where;
+  return buildFinancialRecordWhere({
+    from: query.from,
+    to: query.to,
+    category: query.category,
+    type: query.type as RecordType | undefined,
+  });
 }
 
 export async function listRecords(query: ListRecordsQuery) {
