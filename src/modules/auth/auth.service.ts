@@ -1,4 +1,4 @@
-import { Role } from "../../db/client";
+import { Prisma, Role } from "../../db/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { loadEnv } from "../../config/env";
@@ -53,11 +53,7 @@ export async function registerUser(input: RegisterBody) {
       user: toPublicUser(user),
     };
   } catch (e: unknown) {
-    const code =
-      typeof e === "object" && e !== null && "code" in e
-        ? (e as { code?: string }).code
-        : undefined;
-    if (code === "P2002") {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new AppError(409, "Email is already registered", "EMAIL_TAKEN");
     }
     throw e;

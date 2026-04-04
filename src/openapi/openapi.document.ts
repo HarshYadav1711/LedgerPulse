@@ -154,20 +154,37 @@ export const openApiDocument = {
       },
     },
     "/api/auth/register": {
+      get: {
+        tags: ["Auth"],
+        summary: "Not supported (browser GET) — use POST",
+        description: "Returns **405**; address-bar navigation sends GET. Use **POST** with a JSON body.",
+        responses: {
+          "405": {
+            description: "`Allow: POST` — use POST with `{ email, password }`",
+          },
+        },
+      },
       post: {
         tags: ["Auth"],
         summary: "Register (first user becomes admin; others default to viewer)",
+        description:
+          "Send only **email** and **password**. Do not send `role`: the server assigns **admin** to the first user in the database and **viewer** to everyone else.",
         requestBody: {
           required: true,
           content: {
             "application/json": {
               schema: {
                 type: "object",
+                additionalProperties: false,
                 required: ["email", "password"],
                 properties: {
                   email: { type: "string", format: "email", maxLength: 254 },
                   password: { type: "string", minLength: 8, maxLength: 72 },
                 },
+              },
+              example: {
+                email: "you@example.com",
+                password: "SecurePass123",
               },
             },
           },
@@ -180,6 +197,14 @@ export const openApiDocument = {
       },
     },
     "/api/auth/login": {
+      get: {
+        tags: ["Auth"],
+        summary: "Not supported (browser GET) — use POST",
+        description: "Returns **405**; use **POST** with a JSON body.",
+        responses: {
+          "405": { description: "`Allow: POST`" },
+        },
+      },
       post: {
         tags: ["Auth"],
         summary: "Login",
@@ -189,11 +214,16 @@ export const openApiDocument = {
             "application/json": {
               schema: {
                 type: "object",
+                additionalProperties: false,
                 required: ["email", "password"],
                 properties: {
                   email: { type: "string", format: "email", maxLength: 254 },
                   password: { type: "string", maxLength: 72 },
                 },
+              },
+              example: {
+                email: "you@example.com",
+                password: "SecurePass123",
               },
             },
           },

@@ -62,6 +62,16 @@ describe("LedgerPulse integration", () => {
     expect(res.headers.location).toBe("/api/docs");
   });
 
+  it("GET /api/auth/register and /login return 405 (POST only)", async () => {
+    const reg = await request(app).get("/api/auth/register").expect(405);
+    expect(reg.headers.allow).toBe("POST");
+    expect(reg.body.error.code).toBe("METHOD_NOT_ALLOWED");
+
+    const log = await request(app).get("/api/auth/login").expect(405);
+    expect(log.headers.allow).toBe("POST");
+    expect(log.body.error.code).toBe("METHOD_NOT_ALLOWED");
+  });
+
   it("registers first user as admin and second as viewer", async () => {
     const e1 = email("a");
     const e2 = email("b");
@@ -80,6 +90,14 @@ describe("LedgerPulse integration", () => {
       .send({ email: dup, password: "password1" })
       .expect(409);
     expect(res.body.error.code).toBe("EMAIL_TAKEN");
+  });
+
+  it("rejects register body with unknown keys (e.g. role — assignment is server-side)", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ email: email("strict"), password: "password1", role: "ADMIN" })
+      .expect(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
 
   it("RBAC: viewer cannot create records or access dashboard", async () => {
