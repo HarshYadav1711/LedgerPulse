@@ -11,7 +11,7 @@
     "build": "npx tsc -p tsconfig.build.json && node scripts/copy-prisma-client-to-dist.js",
     "build:copy-client": "node scripts/copy-prisma-client-to-dist.js",
     "start": "node scripts/run-prisma.js migrate deploy && npm run build && node --env-file=.env dist/server.js",
-    "dev": "node scripts/run-prisma.js migrate deploy && npx tsc -p tsconfig.build.json && node scripts/copy-prisma-client-to-dist.js && npx tsc -p tsconfig.build.json --watch",
+    "dev": "node scripts/run-prisma.js migrate deploy && nodemon",
     "test": "jest --runInBand",
     "prisma:generate": "node scripts/prisma-generate.js",
     "db:migrate": "node scripts/run-prisma.js migrate dev",
@@ -47,6 +47,7 @@
     "prisma": "^6.19.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
+    "nodemon": "^3.1.9",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }

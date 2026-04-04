@@ -250,6 +250,8 @@ npx prisma migrate dev
 npm run dev
 ```
 
+`npm run dev` applies pending migrations (`migrate deploy`), then starts the API with **nodemon** + **tsx** (TypeScript directly from `src/`, reload on `.ts` changes). No separate build step or second terminal.
+
 ---
 
 ## Environment Variables
