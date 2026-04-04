@@ -57,6 +57,11 @@ describe("LedgerPulse integration", () => {
     expect(res.body.data.status).toBe("ok");
   });
 
+  it("GET / redirects to API docs", async () => {
+    const res = await request(app).get("/").expect(302);
+    expect(res.headers.location).toBe("/api/docs");
+  });
+
   it("registers first user as admin and second as viewer", async () => {
     const e1 = email("a");
     const e2 = email("b");

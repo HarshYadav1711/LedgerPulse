@@ -34,6 +34,8 @@ All runtime and dev dependencies are **public npm packages** (open-source or fre
 
    `npm start` runs `prisma migrate deploy`, compiles TypeScript (`tsconfig.build.json`), and starts the server with `node --env-file=.env`.
 
+   **`EADDRINUSE` (port already in use):** Another app (often a previous LedgerPulse) is bound to `PORT` (default `3000`). Stop that process, or set e.g. `PORT=3001` in `.env`. On Windows PowerShell: `Get-NetTCPConnection -LocalPort 3000 | Select-Object OwningProcess` then `Stop-Process -Id <pid> -Force`.
+
    **Windows (`EPERM` on `prisma generate`):** The client is generated under `src/generated/prisma-client` (not under `node_modules/.prisma`) so Windows Defender and file indexers are less likely to lock the query engine during rename. `postinstall` still runs `scripts/prisma-generate.js`, which retries on failure and clears old output folders. If install still errors: close other terminals and any running `node` using this repo, then `npm run prisma:generate`. You can also add a Defender exclusion for the project folder.
 
 4. **Optional demo data:**
@@ -44,11 +46,21 @@ All runtime and dev dependencies are **public npm packages** (open-source or fre
 
    This runs `prisma migrate deploy` (so tables exist), then clears `financial_records` and `users` and inserts demo accounts and sample ledger rows (see [Sample credentials](#sample-credentials-and-seed-instructions)).
 
-5. **Development:** `npm run dev` runs migrations once and `tsc --watch`. Run the built server in another terminal, for example:
+   **Prisma `P3009` (failed migration):** Your SQLite file has a migration marked as failed (often from an interrupted run). For **local dev only**, reset the DB and reapply all migrations (then seed):
+
+   ```bash
+   npm run db:reset
+   ```
+
+   That runs `prisma migrate reset --force`: it **drops** the SQLite database at `DATABASE_URL`, reapplies every migration from `prisma/migrations`, then runs `prisma.seed` (`prisma/seed.ts`). Use only on **local dev** data, never on production. To re-seed without wiping the file, use `npm run db:seed` instead (migrations must already succeed).
+
+5. **Development:** `npm run dev` runs migrations, a full `tsc` build, copies `src/generated/prisma-client` into `dist/generated/` (required at runtime), then `tsc --watch`. Run the server in another terminal, for example:
 
    ```bash
    node --env-file=.env dist/server.js
    ```
+
+   After `npx prisma generate` while using watch mode, run `npm run build:copy-client` (or a full `npm run build`) so `dist/generated` stays in sync.
 
 ## Environment variables
 
@@ -65,6 +77,8 @@ Jest sets `NODE_ENV=test`, `JWT_SECRET`, `DATABASE_URL` (absolute path to `prism
 ## API documentation
 
 With the server running (default `http://localhost:3000`):
+
+- **Root URL:** [`http://localhost:3000/`](http://localhost:3000/) redirects to Swagger UI.
 
 - **Swagger UI:** [`http://localhost:3000/api/docs`](http://localhost:3000/api/docs)
 - **OpenAPI JSON:** [`http://localhost:3000/api/openapi.json`](http://localhost:3000/api/openapi.json)
@@ -142,11 +156,13 @@ Feature boundaries are enforced in **folders and imports** (`modules/auth`, `mod
 |--------|-------------|
 | `npm start` | Migrate, build, run production server |
 | `npm run dev` | Migrate once, then TypeScript watch |
-| `npm run build` | Compile `src/` → `dist/` |
+| `npm run build` | Compile `src/` → `dist/`, copy Prisma client into `dist/generated/prisma-client` |
+| `npm run build:copy-client` | Copy generated Prisma client only (after `prisma generate` in watch mode) |
 | `npm test` | Jest integration suite (`--runInBand`) |
 | `npm run db:migrate` | Prisma migrate (development) |
 | `npm run db:studio` | Prisma Studio |
 | `npm run db:seed` | `migrate deploy`, then `prisma/seed.ts` |
+| `npm run db:reset` | `migrate reset --force` + seed (fixes local **P3009** / broken dev DB) |
 
 ## Project layout
 

@@ -14,6 +14,11 @@ export function createApp() {
   app.disable("x-powered-by");
   app.use(express.json());
 
+  /** Browsers opening the site root land here; API lives under `/api`. */
+  app.get("/", (_req, res) => {
+    res.redirect(302, "/api/docs");
+  });
+
   const openApiSpec = createSwaggerSpec();
   app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: "LedgerPulse API" }));
   app.get("/api/openapi.json", (_req, res) => {

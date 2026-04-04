@@ -71,7 +71,7 @@ export const openApiDocument = {
     version: "1.0.0",
     description:
       "Finance ledger API with JWT auth, RBAC, financial records, dashboard analytics, and CSV export. JSON responses use a consistent `{ success, data, error }` envelope except CSV export. " +
-      "No JWT required: `GET /api/health`, `GET /api/docs`, `GET /api/openapi.json`, `POST /api/auth/register`, `POST /api/auth/login`.",
+      "No JWT required: `GET /` (redirects to docs), `GET /api/health`, `GET /api/docs`, `GET /api/openapi.json`, `POST /api/auth/register`, `POST /api/auth/login`.",
   },
   tags: [
     { name: "Health", description: "Liveness" },
@@ -96,6 +96,22 @@ export const openApiDocument = {
     schemas: jsonEnvelope,
   },
   paths: {
+    "/": {
+      get: {
+        tags: ["Health"],
+        summary: "Redirect site root to Swagger UI",
+        responses: {
+          "302": {
+            description: "`Location: /api/docs`",
+            headers: {
+              Location: {
+                schema: { type: "string", example: "/api/docs" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/api/health": {
       get: {
         tags: ["Health"],
