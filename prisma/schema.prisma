@@ -13,12 +13,39 @@ enum Role {
   admin
 }
 
+enum RecordType {
+  income
+  expense
+}
+
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String              @id @default(uuid())
+  email        String              @unique
   passwordHash String
-  role         Role     @default(viewer)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         Role                @default(viewer)
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  records      FinancialRecord[]
+}
+
+/// Financial ledger line item (table: `financial_records`).
+model FinancialRecord {
+  id          String     @id @default(uuid())
+  amount      Decimal
+  type        RecordType
+  category    String
+  date        DateTime
+  notes       String?
+  createdById String
+  createdBy   User       @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  isDeleted   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([createdById, date])
+  @@index([isDeleted, date])
+  @@index([isDeleted, category])
+  @@index([isDeleted, type])
+  @@map("financial_records")
 }
