@@ -1,7 +1,7 @@
-import { Parser } from "json2csv";
 import { Prisma, RecordType } from "../../db/client";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
+import { stringifyCsv } from "../../utils/csv";
 import {
   buildFinancialRecordWhere,
   endOfUtcDay,
@@ -149,16 +149,16 @@ type CsvRow = {
   updatedAt: string;
 };
 
-const csvFields: { label: string; value: keyof CsvRow }[] = [
-  { label: "id", value: "id" },
-  { label: "amount", value: "amount" },
-  { label: "type", value: "type" },
-  { label: "category", value: "category" },
-  { label: "date", value: "date" },
-  { label: "notes", value: "notes" },
-  { label: "createdById", value: "createdById" },
-  { label: "createdAt", value: "createdAt" },
-  { label: "updatedAt", value: "updatedAt" },
+const csvColumns: { header: string; key: keyof CsvRow }[] = [
+  { header: "id", key: "id" },
+  { header: "amount", key: "amount" },
+  { header: "type", key: "type" },
+  { header: "category", key: "category" },
+  { header: "date", key: "date" },
+  { header: "notes", key: "notes" },
+  { header: "createdById", key: "createdById" },
+  { header: "createdAt", key: "createdAt" },
+  { header: "updatedAt", key: "updatedAt" },
 ];
 
 export async function buildFilteredRecordsCsv(query: RecordsExportQuery): Promise<{
@@ -199,8 +199,9 @@ export async function buildFilteredRecordsCsv(query: RecordsExportQuery): Promis
     updatedAt: r.updatedAt.toISOString(),
   }));
 
-  const parser = new Parser<CsvRow>({ fields: csvFields, defaultValue: "" });
-  const body = parser.parse(flat.length > 0 ? flat : []);
+  const headers = csvColumns.map((c) => c.header);
+  const dataRows = flat.map((row) => csvColumns.map((c) => row[c.key] ?? ""));
+  const body = stringifyCsv(headers, dataRows);
   const csv = `\uFEFF${body}`;
   const stamp = new Date().toISOString().replaceAll(":", "-").replace(/\.\d{3}Z$/, "Z");
   const filename = `ledger-pulse-records_${stamp}.csv`;
