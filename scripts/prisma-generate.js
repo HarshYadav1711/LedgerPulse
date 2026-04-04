@@ -1,5 +1,7 @@
 "use strict";
 
+require("./sync-datasource-provider").syncDatasourceProvider();
+
 /**
  * Windows often fails prisma generate with EPERM when renaming the query engine DLL
  * (Defender, indexer, or another Node process holds a lock). Retries after removing

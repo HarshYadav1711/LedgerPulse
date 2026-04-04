@@ -245,11 +245,14 @@ npm run dev
 
 ## Environment Variables
 
-```
-DATABASE_URL=
-DB_PROVIDER=
-JWT_SECRET=
-```
+| Variable | Description |
+|----------|-------------|
+| `DB_PROVIDER` | `sqlite` (default) or `postgresql`. Drives the Prisma datasource **before** CLI runs (Prisma forbids `provider = env(...)` in `schema.prisma`; see `scripts/sync-datasource-provider.js`). |
+| `DATABASE_URL` | SQLite: `file:./dev.db`. PostgreSQL: `postgresql://USER:PASSWORD@HOST:PORT/DB?schema=public` |
+| `JWT_SECRET` | ≥ 16 characters |
+| `PORT`, `NODE_ENV`, `BCRYPT_ROUNDS` | Optional; see `.env.example` |
+
+**PostgreSQL notes:** Migrations in `prisma/migrations/` are **SQLite-specific**. For Postgres, point `DATABASE_URL` at an empty database, set `DB_PROVIDER=postgresql`, run `npm run prisma:generate`, then **`npm run db:push`** to create tables (or author Postgres migrations separately). Use `node scripts/run-prisma.js` or npm scripts (`db:migrate`, `db:seed`, …) so the provider sync runs; raw `npx prisma` skips sync unless you run `node scripts/sync-datasource-provider.js` first.
 
 ---
 

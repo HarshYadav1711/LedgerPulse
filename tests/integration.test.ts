@@ -16,7 +16,7 @@ function email(prefix: string) {
 const app = createApp();
 
 beforeAll(() => {
-  execSync("npx prisma migrate deploy", {
+  execSync("node scripts/run-prisma.js migrate deploy", {
     cwd: path.join(__dirname, ".."),
     stdio: "inherit",
     env: process.env,

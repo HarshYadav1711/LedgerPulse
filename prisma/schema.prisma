@@ -4,6 +4,8 @@ generator client {
   output   = "../src/generated/prisma-client"
 }
 
+// Prisma forbids env() on `provider` (deterministic migrations). `DB_PROVIDER` in `.env` is applied
+// by `scripts/sync-datasource-provider.js` before any Prisma CLI invocation. Allowed: sqlite | postgresql.
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")

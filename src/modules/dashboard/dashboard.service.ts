@@ -13,6 +13,12 @@ import type {
   DashboardTrendsQuery,
 } from "./dashboard.schemas";
 
+/** Raw trend SQL is dialect-specific; Prisma queries elsewhere stay portable. */
+function isPostgresUrl(): boolean {
+  const u = process.env.DATABASE_URL ?? "";
+  return u.startsWith("postgresql:") || u.startsWith("postgres:");
+}
+
 function toFilters(input: DashboardFiltersInput): FinancialRecordFilters {
   return {
     from: input.from,
@@ -200,9 +206,37 @@ export async function getTrends(input: DashboardTrendsQuery) {
   const category = filters.category;
   const typeFilter = filters.type;
 
-  // Week buckets use SQLite strftime('%Y-%W') (0–53, week starts Sunday). Month buckets use '%Y-%m'.
-  const rows =
-    input.granularity === "month"
+  const rows = isPostgresUrl()
+    ? input.granularity === "month"
+      ? await prisma.$queryRaw<RawTrendRow[]>`
+          SELECT TO_CHAR("date", 'YYYY-MM') AS bucket,
+                 type::text AS type,
+                 (SUM(amount))::float AS total,
+                 COUNT(*)::int AS cnt
+          FROM financial_records
+          WHERE "isDeleted" = false
+            AND "date" >= ${from}
+            AND "date" <= ${to}
+            ${category !== undefined ? Prisma.sql`AND category = ${category}` : Prisma.empty}
+            ${typeFilter !== undefined ? Prisma.sql`AND type::text = ${typeFilter}` : Prisma.empty}
+          GROUP BY TO_CHAR("date", 'YYYY-MM'), type::text
+          ORDER BY TO_CHAR("date", 'YYYY-MM') ASC
+        `
+      : await prisma.$queryRaw<RawTrendRow[]>`
+          SELECT TO_CHAR(date_trunc('week', "date"::timestamp), 'YYYY-MM-DD') AS bucket,
+                 type::text AS type,
+                 (SUM(amount))::float AS total,
+                 COUNT(*)::int AS cnt
+          FROM financial_records
+          WHERE "isDeleted" = false
+            AND "date" >= ${from}
+            AND "date" <= ${to}
+            ${category !== undefined ? Prisma.sql`AND category = ${category}` : Prisma.empty}
+            ${typeFilter !== undefined ? Prisma.sql`AND type::text = ${typeFilter}` : Prisma.empty}
+          GROUP BY date_trunc('week', "date"::timestamp), type::text
+          ORDER BY date_trunc('week', "date"::timestamp) ASC
+        `
+    : input.granularity === "month"
       ? await prisma.$queryRaw<RawTrendRow[]>`
           SELECT strftime('%Y-%m', date) AS bucket,
                  type,

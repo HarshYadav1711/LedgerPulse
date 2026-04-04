@@ -10,14 +10,16 @@
     "postinstall": "node scripts/prisma-generate.js",
     "build": "npx tsc -p tsconfig.build.json && node scripts/copy-prisma-client-to-dist.js",
     "build:copy-client": "node scripts/copy-prisma-client-to-dist.js",
-    "start": "prisma migrate deploy && npm run build && node --env-file=.env dist/server.js",
-    "dev": "prisma migrate deploy && npx tsc -p tsconfig.build.json && node scripts/copy-prisma-client-to-dist.js && npx tsc -p tsconfig.build.json --watch",
+    "start": "node scripts/run-prisma.js migrate deploy && npm run build && node --env-file=.env dist/server.js",
+    "dev": "node scripts/run-prisma.js migrate deploy && npx tsc -p tsconfig.build.json && node scripts/copy-prisma-client-to-dist.js && npx tsc -p tsconfig.build.json --watch",
     "test": "jest --runInBand",
     "prisma:generate": "node scripts/prisma-generate.js",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "db:seed": "prisma migrate deploy && npx tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force"
+    "db:migrate": "node scripts/run-prisma.js migrate dev",
+    "db:studio": "node scripts/run-prisma.js studio",
+    "db:seed": "node scripts/run-prisma.js migrate deploy && npx tsx prisma/seed.ts",
+    "db:reset": "node scripts/run-prisma.js migrate reset --force",
+    "db:push": "node scripts/run-prisma.js db push",
+    "prisma:validate": "node scripts/run-prisma.js validate"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
