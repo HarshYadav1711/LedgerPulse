@@ -6,8 +6,12 @@ import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
 import type { LoginBody, RegisterBody } from "./auth.schemas";
 
-const SALT_ROUNDS = 12;
 const TOKEN_TTL_SEC = 60 * 60 * 24 * 7;
+
+function bcryptRounds(): number {
+  const n = Number(process.env.BCRYPT_ROUNDS);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 12;
+}
 
 function signAccessToken(userId: string): string {
   const { JWT_SECRET } = loadEnv();
@@ -33,7 +37,7 @@ export function toPublicUser(row: {
 }
 
 export async function registerUser(input: RegisterBody) {
-  const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+  const passwordHash = await bcrypt.hash(input.password, bcryptRounds());
   try {
     const existingCount = await prisma.user.count();
     const user = await prisma.user.create({

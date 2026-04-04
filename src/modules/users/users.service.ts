@@ -1,9 +1,9 @@
 import type { Role } from "@prisma/client";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
-import type { AuthUser } from "../../authz/types";
 import { toPublicUser } from "../auth/auth.service";
 import type { ListUsersQuery, UpdateUserBody } from "./users.schemas";
+import type { AuthUser } from "../../authz/types";
 
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -13,7 +13,7 @@ export async function getMe(userId: string) {
   return toPublicUser(user);
 }
 
-export async function listUsers(_actor: AuthUser, query: ListUsersQuery) {
+export async function listUsers(query: ListUsersQuery) {
   const [items, total] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -30,7 +30,7 @@ export async function listUsers(_actor: AuthUser, query: ListUsersQuery) {
   };
 }
 
-export async function getUserById(_actor: AuthUser, id: string) {
+export async function getUserById(id: string) {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) {
     throw new AppError(404, "User not found", "NOT_FOUND");

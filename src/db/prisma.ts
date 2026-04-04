@@ -2,12 +2,18 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+const log: ("error" | "warn")[] =
+  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test" ? ["error", "warn"] : ["error"];
+
+/** Reuse one client in dev (hot reload). Test/production get a normal module singleton without `globalThis`. */
+const useGlobalDevCache = process.env.NODE_ENV === "development";
+
 export const prisma =
-  globalForPrisma.prisma ??
+  (useGlobalDevCache ? globalForPrisma.prisma : undefined) ??
   new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    log,
   });
 
-if (process.env.NODE_ENV !== "production") {
+if (useGlobalDevCache) {
   globalForPrisma.prisma = prisma;
 }

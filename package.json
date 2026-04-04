@@ -2,7 +2,7 @@
   "name": "ledgerpulse",
   "version": "1.0.0",
   "private": true,
-  "description": "LedgerPulse API (scaffold)",
+  "description": "LedgerPulse — modular finance API (Express, Prisma, JWT, RBAC)",
   "engines": {
     "node": ">=24"
   },
@@ -11,8 +11,13 @@
     "build": "npx tsc -p tsconfig.build.json",
     "start": "prisma migrate deploy && npm run build && node --env-file=.env dist/server.js",
     "dev": "prisma migrate deploy && npx tsc -p tsconfig.build.json --watch",
+    "test": "jest --runInBand",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "npx tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -20,14 +25,24 @@
     "express": "^4.21.2",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.10",
+    "@types/supertest": "^6.0.2",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "jest": "^29.7.0",
     "prisma": "^6.19.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
 }

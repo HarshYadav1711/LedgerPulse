@@ -11,16 +11,14 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const actor = req.user!;
   const query = req.query as unknown as ListUsersQuery;
-  const page = await usersService.listUsers(actor, query);
+  const page = await usersService.listUsers(query);
   sendSuccess(res, 200, page);
 });
 
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const actor = req.user!;
   const { id } = req.params;
-  const user = await usersService.getUserById(actor, id);
+  const user = await usersService.getUserById(id);
   sendSuccess(res, 200, user);
 });
 

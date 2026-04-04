@@ -15,7 +15,6 @@ const dashboardRouter = Router();
 
 const analystOrAdmin = [authenticate, requirePermission(Permission.DASHBOARD_READ)] as const;
 
-/** Full dashboard payload in one response (summary, categories, recent, trends). */
 dashboardRouter.get(
   "/",
   ...analystOrAdmin,

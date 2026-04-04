@@ -1,76 +1,169 @@
 # LedgerPulse
 
-Backend API scaffold (Express + Prisma + SQLite + Zod).
+## Project overview
 
-## Prerequisites
+LedgerPulse is a **modular monolith** HTTP API for managing financial ledger entries: users authenticate with JWTs, roles control access, records support filtering and pagination, the dashboard exposes analytics, and admins can export filtered data as CSV. The codebase is organized by feature modules (auth, users, records, dashboard) inside a single deployable Node process, sharing one SQLite database via Prisma.
 
-- Node.js 24 LTS
-- npm
+## Stack
+
+| Layer | Choice |
+|--------|--------|
+| Runtime | Node.js 24+ |
+| HTTP | Express 4 |
+| Persistence | SQLite + Prisma ORM |
+| Validation | Zod |
+| Auth | bcrypt password hashes, JWT (`jsonwebtoken`) |
+| CSV | `json2csv` |
+| API docs | OpenAPI 3.0 hand-authored document + `swagger-jsdoc` merge + `swagger-ui-express` |
+| Tests | Jest, `supertest`, `ts-jest`, `tsx` (seed) |
 
 ## Setup
 
-1. Copy `.env.example` to `.env` in the project root.
-2. Install and start:
+1. **Prerequisites:** Node.js 24 LTS and npm.
 
-```bash
-npm install && npm start
-```
+2. **Environment:** Copy `.env.example` to `.env` in the project root and set at least `DATABASE_URL` and `JWT_SECRET` (≥ 16 characters).
 
-`npm start` runs database migrations, compiles TypeScript, and starts the server with `node --env-file=.env`.
+3. **Install and run:**
+
+   ```bash
+   npm install
+   npm start
+   ```
+
+   `npm start` runs `prisma migrate deploy`, compiles TypeScript (`tsconfig.build.json`), and starts the server with `node --env-file=.env`.
+
+4. **Optional demo data:**
+
+   ```bash
+   npm run db:seed
+   ```
+
+   This clears `financial_records` and `users`, then inserts three demo accounts and sample ledger rows (see [Sample credentials](#sample-credentials-and-seed-instructions)).
+
+5. **Development:** `npm run dev` runs migrations once and `tsc --watch`. Run the built server in another terminal, for example:
+
+   ```bash
+   node --env-file=.env dist/server.js
+   ```
+
+## Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | SQLite URL, e.g. `file:./dev.db` |
+| `JWT_SECRET` | Yes | Secret for signing JWTs (minimum 16 characters) |
+| `PORT` | No | HTTP port (default `3000`) |
+| `NODE_ENV` | No | `development` \| `test` \| `production` (default `development` in schema) |
+| `BCRYPT_ROUNDS` | No | bcrypt cost factor; default `12` in code. Tests set `4` via `tests/setEnv.ts` for speed. |
+
+Jest sets `NODE_ENV=test`, `JWT_SECRET`, `DATABASE_URL` (absolute path to `prisma/test.db`), and `BCRYPT_ROUNDS` before loading application code.
+
+## API documentation
+
+With the server running (default `http://localhost:3000`):
+
+- **Swagger UI:** [`http://localhost:3000/api/docs`](http://localhost:3000/api/docs)
+- **OpenAPI JSON:** [`http://localhost:3000/api/openapi.json`](http://localhost:3000/api/openapi.json)
+
+The machine-readable spec is defined in `src/openapi/openapi.document.ts` and merged in `src/swagger.ts`.
+
+## Assumptions
+
+- **First registered user** becomes `admin`; subsequent registrations default to `viewer` (see `registerUser` in `src/modules/auth/auth.service.ts`).
+- **Ledger rows** are **soft-deleted** (`isDeleted`); list and analytics queries exclude deleted rows unless noted in service logic.
+- **Dates** on records are normalized to **UTC midnight** for the given calendar day on create/update (`records.service.ts`).
+- **CSV export** is capped (large exports set `X-LedgerPulse-Export-Truncated`); see OpenAPI and `records.service.ts`.
+- **SQLite** is sufficient for coursework/demo; production would typically use a managed RDBMS and connection pooling.
+
+## Tradeoffs
+
+- **SQLite + single process:** Simple submission and CI story; no separate DB service. Limits concurrent writers and horizontal scaling compared to PostgreSQL.
+- **JWT in Authorization header:** Stateless and easy to test; no refresh-token rotation or server-side revocation list (deactivation is enforced on each request via DB lookup in `authenticate`).
+- **OpenAPI maintained alongside code:** Accurate high-level contract without codegen coupling; must be updated when routes change (mitigated by integration test hitting `/api/openapi.json`).
+- **Integration tests over heavy unit mocks:** Higher confidence for HTTP + DB + auth together; slower than isolated unit tests (mitigated with `--runInBand` and lower `BCRYPT_ROUNDS` in test).
+
+## Role model
+
+Roles are stored on `User` (`prisma/schema.prisma`). Effective permissions are centralized in `src/authz/policy.ts`:
+
+| Role | Permissions |
+|------|-------------|
+| **viewer** | Read records (`records:read`) |
+| **analyst** | Read records + read dashboard (`dashboard:read`) |
+| **admin** | Read/write records, read dashboard, manage users (`users:manage`) |
+
+Routes apply `authenticate` and `requirePermission(...)` from `src/middleware/authorize.ts`.
+
+## Feature-to-requirement mapping
+
+Use this table to tie a typical assignment rubric to the implementation. Rename the “Requirement” column to match your brief if needed.
+
+| Requirement (typical) | Implementation |
+|------------------------|----------------|
+| User registration / login | `POST /api/auth/register`, `POST /api/auth/login` — `src/modules/auth/*` |
+| JWT authentication | `auth.service.ts` (sign), `src/middleware/authenticate.ts` (verify + load user) |
+| RBAC / role-based access | `src/authz/policy.ts`, `src/middleware/authorize.ts`, route-level `requirePermission` |
+| CRUD on domain entities | Financial records: `POST/GET/PATCH/DELETE /api/records` — `src/modules/records/*` |
+| Pagination | List response `{ page, limit, total, totalPages, data }` — `records.service.ts` + Zod `listRecordsQuerySchema` |
+| Filtering / search | Query params `from`, `to`, `category`, `type`, `search` — `records.filters.ts` |
+| Analytics / reporting | `GET /api/dashboard`, `/summary`, `/by-category`, `/recent`, `/trends` — `src/modules/dashboard/*` |
+| CSV export | `GET /api/records/export` — `records.controller.ts` + `records.service.ts` |
+| Admin user management | `GET/PATCH /api/users`, `GET /api/users/me` — `src/modules/users/*` |
+| Consistent JSON errors | `src/middleware/errorHandler.ts`, `src/utils/http.ts` (`success` / `error` envelope) |
+| API documentation | OpenAPI + Swagger UI (`src/openapi/openapi.document.ts`, `src/app.ts`) |
+| Automated tests | `tests/integration.test.ts` (auth, RBAC, CRUD, filters, pagination, analytics, CSV, OpenAPI) |
+| Seed / demo data | `prisma/seed.ts`, `npm run db:seed` |
+
+## Sample credentials and seed instructions
+
+After `npm run db:seed`:
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@demo.local` | `DemoPass123` | admin |
+| `analyst@demo.local` | `DemoPass123` | analyst |
+| `viewer@demo.local` | `DemoPass123` | viewer |
+
+**Without seed:** register the first account via `POST /api/auth/register` (becomes admin), then either register more users (they become viewers) or promote roles with an admin `PATCH /api/users/:id`.
+
+## Why a modular monolith?
+
+Feature boundaries are enforced in **folders and imports** (`modules/auth`, `modules/records`, etc.), shared **authz** and **middleware**, and a **single** Express app and database. There is one deployment artifact and no network hops between modules, which keeps the assignment small and testable, while the structure still maps cleanly to future extraction (e.g. records service behind HTTP) if requirements grow.
 
 ## Scripts
 
 | Script | Description |
 |--------|-------------|
 | `npm start` | Migrate, build, run production server |
-| `npm run dev` | Migrate once, then `tsc --watch` (run server in another terminal after build) |
-| `npm run build` | Compile `src/` to `dist/` |
-| `npm run db:migrate` | Create/apply migrations (development) |
-| `npm run db:studio` | Open Prisma Studio |
+| `npm run dev` | Migrate once, then TypeScript watch |
+| `npm run build` | Compile `src/` → `dist/` |
+| `npm test` | Jest integration suite (`--runInBand`) |
+| `npm run db:migrate` | Prisma migrate (development) |
+| `npm run db:studio` | Prisma Studio |
+| `npm run db:seed` | Run `prisma/seed.ts` |
 
 ## Project layout
 
 ```
 src/
-  config/           # Environment and app configuration
-  middleware/       # Error handling, validation helpers, etc.
+  authz/            # Permissions and role → permission map
+  config/           # Env validation (Zod)
+  db/               # Prisma client singleton
+  errors/           # AppError
+  middleware/       # Auth, authorize, validate, errors
   modules/
-    auth/           # Auth routes (stub)
-    users/          # User routes (stub)
-    records/        # Records routes (stub)
-    dashboard/      # Dashboard routes (stub)
-  utils/            # Shared helpers (HTTP envelope, async handler)
-  validation/       # Optional shared Zod schemas (see `src/validation/index.ts`)
-  app.ts            # Express app factory
-  server.ts         # HTTP listener + graceful shutdown
-prisma/             # Schema and migrations
+    auth/           # Register, login
+    users/          # Me, admin user CRUD
+    records/        # Ledger CRUD, list, CSV export
+    dashboard/      # Aggregations and trends
+  openapi/          # OpenAPI document + swagger-jsdoc stub
+  utils/            # asyncHandler, HTTP helpers
+  app.ts            # Express factory (routes, Swagger UI)
+  server.ts         # listen + graceful shutdown
+  swagger.ts        # Builds merged OpenAPI spec
+prisma/             # schema, migrations, seed.ts
+tests/              # setEnv.ts, integration.test.ts
 ```
-
-## API
-
-- **Health:** `GET /api/health` — process liveness (JSON envelope).
-
-Module routers are mounted under `/api/auth`, `/api/users`, `/api/records`, and `/api/dashboard` with no business routes yet.
-
-## Response format
-
-JSON responses use:
-
-```json
-{ "success": true, "data": {}, "error": null }
-```
-
-Errors:
-
-```json
-{ "success": false, "data": null, "error": { "message": "...", "code": "..." } }
-```
-
-## TODO
-
-- [ ] Replace `SchemaPlaceholder` in `prisma/schema.prisma` with domain models.
-- [ ] Implement module routes, controllers, services, and Zod schemas.
-- [ ] Add authentication, tests, and API documentation as required.
 
 ## License
 
