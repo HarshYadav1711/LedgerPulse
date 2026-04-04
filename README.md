@@ -106,6 +106,22 @@ Efficient aggregation at the database layer:
 
 ---
 
+## Feature Mapping
+
+| Feature | Implementation |
+|--------|----------------|
+| User & role management | `POST /api/auth/register`, `POST /api/auth/login`; `src/modules/auth/`; JWT in `authenticate` middleware |
+| Access control (RBAC) | `src/authz/policy.ts`; `requirePermission` in `src/middleware/authorize.ts` (with `authenticate`) |
+| Financial records | `GET|POST|PATCH|DELETE /api/records`; `src/modules/records/` (controllers, services, Zod schemas) |
+| Record filters, pagination & search | Query validation in `records.schemas.ts`; `buildFinancialRecordWhere` in `records.filters.ts` |
+| CSV export | `GET /api/records/export`; `buildFilteredRecordsCsv` in `records.service.ts`; `src/utils/csv.ts` |
+| Dashboard analytics | `GET /api/dashboard`, `/summary`, `/by-category`, `/recent`, `/trends`; `src/modules/dashboard/` |
+| Admin user directory | `GET|PATCH /api/users`, `GET /api/users/me`; `src/modules/users/` |
+| API contract & docs | `src/openapi/openapi.document.ts`; Swagger UI at `/api/docs`; `GET /api/openapi.json` |
+| Persistence | Prisma schema `prisma/schema.prisma`; client `src/db/prisma.ts` + `src/generated/prisma-client` |
+
+---
+
 ## API Design
 
 ### Authentication
