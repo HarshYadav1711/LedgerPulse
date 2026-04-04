@@ -70,14 +70,19 @@ export const openApiDocument = {
     title: "LedgerPulse API",
     version: "1.0.0",
     description:
-      "Finance ledger API with JWT auth, RBAC, financial records, dashboard analytics, and CSV export. JSON responses use a consistent `{ success, data, error }` envelope except CSV export.",
+      "Finance ledger API with JWT auth, RBAC, financial records, dashboard analytics, and CSV export. JSON responses use a consistent `{ success, data, error }` envelope except CSV export. " +
+      "No JWT required: `GET /api/health`, `GET /api/docs`, `GET /api/openapi.json`, `POST /api/auth/register`, `POST /api/auth/login`.",
   },
   tags: [
     { name: "Health", description: "Liveness" },
     { name: "Auth", description: "Registration and login" },
     { name: "Users", description: "Profiles and admin user management" },
     { name: "Records", description: "Financial records (RBAC: admin writes, all roles read)" },
-    { name: "Dashboard", description: "Aggregations (analyst and admin only)" },
+    {
+      name: "Dashboard",
+      description:
+        "Aggregations (analyst and admin only). Filters: date range, category, type — same as records list but without `search` or pagination.",
+    },
   ],
   components: {
     securitySchemes: {
@@ -120,6 +125,18 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/openapi.json": {
+      get: {
+        tags: ["Health"],
+        summary: "OpenAPI 3.0 document (same spec served to Swagger UI)",
+        responses: {
+          "200": {
+            description: "OpenAPI JSON",
+            content: { "application/json": { schema: { type: "object" } } },
+          },
+        },
+      },
+    },
     "/api/auth/register": {
       post: {
         tags: ["Auth"],
@@ -132,8 +149,8 @@ export const openApiDocument = {
                 type: "object",
                 required: ["email", "password"],
                 properties: {
-                  email: { type: "string", format: "email" },
-                  password: { type: "string", minLength: 8 },
+                  email: { type: "string", format: "email", maxLength: 254 },
+                  password: { type: "string", minLength: 8, maxLength: 72 },
                 },
               },
             },
@@ -158,8 +175,8 @@ export const openApiDocument = {
                 type: "object",
                 required: ["email", "password"],
                 properties: {
-                  email: { type: "string", format: "email" },
-                  password: { type: "string" },
+                  email: { type: "string", format: "email", maxLength: 254 },
+                  password: { type: "string", maxLength: 72 },
                 },
               },
             },
@@ -189,11 +206,13 @@ export const openApiDocument = {
         summary: "List users (admin)",
         security: [{ bearerAuth: [] }],
         parameters: [
-          { name: "limit", in: "query", schema: { type: "integer", default: 20, maximum: 100 } },
-          { name: "offset", in: "query", schema: { type: "integer", default: 0 } },
+          { name: "limit", in: "query", schema: { type: "integer", default: 20, minimum: 1, maximum: 100 } },
+          { name: "offset", in: "query", schema: { type: "integer", default: 0, minimum: 0 } },
         ],
         responses: {
-          "200": { description: "Paginated list" },
+          "200": {
+            description: "`{ items: PublicUser[], total, limit, offset }` (offset-based, not page/limit pages)",
+          },
           "403": { description: "Forbidden" },
         },
       },
@@ -239,6 +258,8 @@ export const openApiDocument = {
       get: {
         tags: ["Records"],
         summary: "List records (paginated, filterable, searchable)",
+        description:
+          "`search` applies together with `page`/`limit` and other filters (subset of rows, then paginated). Non-deleted records only.",
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: "page", in: "query", schema: { type: "integer", minimum: 1, default: 1 } },
@@ -250,7 +271,7 @@ export const openApiDocument = {
           { name: "search", in: "query", schema: { type: "string", maxLength: 200 } },
         ],
         responses: {
-          "200": { description: "{ page, limit, total, totalPages, data }" },
+          "200": { description: "{ page, limit, total, totalPages, data } — `isDeleted` is always false for listed rows" },
           "403": { description: "Forbidden" },
         },
       },
@@ -286,6 +307,7 @@ export const openApiDocument = {
       get: {
         tags: ["Records"],
         summary: "Export filtered records as CSV (same filters as list except pagination)",
+        description: "Uses the same filter pipeline as `GET /api/records` (including `search`); non-deleted rows only.",
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: "from", in: "query", schema: { type: "string", format: "date-time" } },

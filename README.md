@@ -17,6 +17,8 @@ LedgerPulse is a **modular monolith** HTTP API for managing financial ledger ent
 | API docs | OpenAPI 3.0 hand-authored document + `swagger-jsdoc` merge + `swagger-ui-express` |
 | Tests | Jest, `supertest`, `ts-jest`, `tsx` (seed) |
 
+All runtime and dev dependencies are **public npm packages** (open-source or free-tier tooling). Nothing in this repo requires a paid vendor account, API subscription, or cloud sign-up to build, run, or test locally.
+
 ## Setup
 
 1. **Prerequisites:** Node.js 24 LTS and npm.
@@ -70,7 +72,9 @@ The machine-readable spec is defined in `src/openapi/openapi.document.ts` and me
 ## Assumptions
 
 - **First registered user** becomes `admin`; subsequent registrations default to `viewer` (see `registerUser` in `src/modules/auth/auth.service.ts`).
-- **Ledger rows** are **soft-deleted** (`isDeleted`); list and analytics queries exclude deleted rows unless noted in service logic.
+- **Ledger rows** are **soft-deleted** (`isDeleted`); list, CSV export, and dashboard aggregations exclude deleted rows (`buildFinancialRecordWhere` and raw trend SQL use `isDeleted = 0`).
+- **Dashboard** filters match record list filters **except** there is no `search` query on dashboard routes (only `from`, `to`, `category`, `type`, plus trend/granularity options).
+- **Unknown server failures** return a generic `500` message (`INTERNAL_ERROR`); details are logged server-side only.
 - **Dates** on records are normalized to **UTC midnight** for the given calendar day on create/update (`records.service.ts`).
 - **CSV export** is capped (large exports set `X-LedgerPulse-Export-Truncated`); see OpenAPI and `records.service.ts`.
 - **SQLite** is sufficient for coursework/demo; production would typically use a managed RDBMS and connection pooling.
@@ -108,7 +112,7 @@ Use this table to tie a typical assignment rubric to the implementation. Rename 
 | Filtering / search | Query params `from`, `to`, `category`, `type`, `search` — `records.filters.ts` |
 | Analytics / reporting | `GET /api/dashboard`, `/summary`, `/by-category`, `/recent`, `/trends` — `src/modules/dashboard/*` |
 | CSV export | `GET /api/records/export` — `records.controller.ts` + `records.service.ts` |
-| Admin user management | `GET/PATCH /api/users`, `GET /api/users/me` — `src/modules/users/*` |
+| Admin user management | `GET/PATCH /api/users` (offset pagination: `items`, `total`, `limit`, `offset`), `GET /api/users/me` — `src/modules/users/*` |
 | Consistent JSON errors | `src/middleware/errorHandler.ts`, `src/utils/http.ts` (`success` / `error` envelope) |
 | API documentation | OpenAPI + Swagger UI (`src/openapi/openapi.document.ts`, `src/app.ts`) |
 | Automated tests | `tests/integration.test.ts` (auth, RBAC, CRUD, filters, pagination, analytics, CSV, OpenAPI) |

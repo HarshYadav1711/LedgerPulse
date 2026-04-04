@@ -17,7 +17,6 @@ export function errorHandler(
     sendError(res, err.statusCode, err.message, err.code, err.details);
     return;
   }
-  const message = err instanceof Error ? err.message : "Internal server error";
   console.error(err);
-  sendError(res, 500, message, "INTERNAL_ERROR");
+  sendError(res, 500, "Internal server error", "INTERNAL_ERROR");
 }

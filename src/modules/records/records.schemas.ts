@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+/** Rejects `Invalid Date` from `new Date(...)` (e.g. bad query strings or JSON). */
+export const coerceValidDate = z.coerce.date().refine((d) => !Number.isNaN(d.getTime()), {
+  message: "Invalid date",
+});
+
+/** Query/body: treat empty string as omitted (common with HTML forms). */
+function optionalCoercedDate() {
+  return z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    coerceValidDate.optional()
+  );
+}
+
 const amountSchema = z.coerce
   .number()
   .finite()
@@ -12,7 +25,7 @@ export const createRecordBodySchema = z.object({
   amount: amountSchema,
   type: recordTypeSchema,
   category: z.string().trim().min(1, "Category is required").max(120),
-  date: z.coerce.date(),
+  date: coerceValidDate,
   notes: z
     .string()
     .trim()
@@ -26,7 +39,7 @@ export const updateRecordBodySchema = z
     amount: amountSchema.optional(),
     type: recordTypeSchema.optional(),
     category: z.string().trim().min(1).max(120).optional(),
-    date: z.coerce.date().optional(),
+    date: optionalCoercedDate(),
     notes: z
       .union([z.string().trim().max(2000), z.literal(""), z.null()])
       .optional()
@@ -56,8 +69,8 @@ export const recordIdParamSchema = z.object({
 
 /** Base shape for list + dashboard query filters (extend before applying `refineFinancialRecordQuery`). */
 export const financialRecordFiltersObjectSchema = z.object({
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional(),
+  from: optionalCoercedDate(),
+  to: optionalCoercedDate(),
   category: z
     .string()
     .trim()
