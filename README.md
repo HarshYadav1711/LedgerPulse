@@ -34,13 +34,15 @@ All runtime and dev dependencies are **public npm packages** (open-source or fre
 
    `npm start` runs `prisma migrate deploy`, compiles TypeScript (`tsconfig.build.json`), and starts the server with `node --env-file=.env`.
 
+   **Windows (`EPERM` on `prisma generate`):** The client is generated under `src/generated/prisma-client` (not under `node_modules/.prisma`) so Windows Defender and file indexers are less likely to lock the query engine during rename. `postinstall` still runs `scripts/prisma-generate.js`, which retries on failure and clears old output folders. If install still errors: close other terminals and any running `node` using this repo, then `npm run prisma:generate`. You can also add a Defender exclusion for the project folder.
+
 4. **Optional demo data:**
 
    ```bash
    npm run db:seed
    ```
 
-   This clears `financial_records` and `users`, then inserts three demo accounts and sample ledger rows (see [Sample credentials](#sample-credentials-and-seed-instructions)).
+   This runs `prisma migrate deploy` (so tables exist), then clears `financial_records` and `users` and inserts demo accounts and sample ledger rows (see [Sample credentials](#sample-credentials-and-seed-instructions)).
 
 5. **Development:** `npm run dev` runs migrations once and `tsc --watch`. Run the built server in another terminal, for example:
 
@@ -144,7 +146,7 @@ Feature boundaries are enforced in **folders and imports** (`modules/auth`, `mod
 | `npm test` | Jest integration suite (`--runInBand`) |
 | `npm run db:migrate` | Prisma migrate (development) |
 | `npm run db:studio` | Prisma Studio |
-| `npm run db:seed` | Run `prisma/seed.ts` |
+| `npm run db:seed` | `migrate deploy`, then `prisma/seed.ts` |
 
 ## Project layout
 
@@ -152,7 +154,8 @@ Feature boundaries are enforced in **folders and imports** (`modules/auth`, `mod
 src/
   authz/            # Permissions and role → permission map
   config/           # Env validation (Zod)
-  db/               # Prisma client singleton
+  db/               # Prisma singleton + re-exports generated client
+  generated/        # Prisma Client output (gitignored; created by postinstall / prisma generate)
   errors/           # AppError
   middleware/       # Auth, authorize, validate, errors
   modules/

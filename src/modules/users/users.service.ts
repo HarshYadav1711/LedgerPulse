@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { Role } from "../../db/client";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
 import { toPublicUser } from "../auth/auth.service";

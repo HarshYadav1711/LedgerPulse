@@ -1,4 +1,4 @@
-import type { Prisma, RecordType } from "@prisma/client";
+import type { Prisma, RecordType } from "../../db/client";
 
 /** Shared filter shape for list, export, and dashboard aggregations (non-deleted only). */
 export type FinancialRecordFilters = {

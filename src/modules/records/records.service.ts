@@ -1,5 +1,5 @@
 import { Parser } from "json2csv";
-import { Prisma, RecordType } from "@prisma/client";
+import { Prisma, RecordType } from "../../db/client";
 import { prisma } from "../../db/prisma";
 import { AppError } from "../../errors/AppError";
 import {

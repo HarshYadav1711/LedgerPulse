@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "../../db/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { loadEnv } from "../../config/env";

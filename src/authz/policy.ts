@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { Role } from "../db/client";
 
 /**
  * Fine-grained permissions. Route handlers declare what they need;

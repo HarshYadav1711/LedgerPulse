@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  // Outside node_modules to avoid Windows EPERM when AV/indexers lock DLLs under node_modules\.prisma
+  output   = "../src/generated/prisma-client"
 }
 
 datasource db {

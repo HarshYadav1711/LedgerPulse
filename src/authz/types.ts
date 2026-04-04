@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { Role } from "../db/client";
 
 /** Active user attached by `authenticate` (no password hash). */
 export type AuthUser = {

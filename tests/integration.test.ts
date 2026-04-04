@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import path from "path";
 import bcrypt from "bcryptjs";
 import request from "supertest";
-import { Role } from "@prisma/client";
+import { Role } from "../src/db/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db/prisma";
 
