@@ -110,7 +110,7 @@ Efficient aggregation at the database layer:
 
 ### Authentication
 
-**POST /auth/register**
+**POST /api/auth/register**
 
 ```json
 {
@@ -122,7 +122,7 @@ Efficient aggregation at the database layer:
 
 ---
 
-**POST /auth/login**
+**POST /api/auth/login**
 
 ```json
 {
@@ -141,9 +141,18 @@ Response:
 
 ---
 
+### Users
+
+- **GET /api/users/me** — Current user (JWT).
+- **GET /api/users** — List users, paginated (`limit`, `offset`); admin only.
+- **GET /api/users/:id** — User by id; admin only.
+- **PATCH /api/users/:id** — Update `role` and/or `isActive`; admin only.
+
+---
+
 ### Records
 
-**GET /records?page=1&limit=10&search=salary**
+**GET /api/records?page=1&limit=10&search=salary**
 
 Response:
 
@@ -168,7 +177,7 @@ Response:
 
 ### Dashboard
 
-**GET /dashboard/summary**
+**GET /api/dashboard/summary**
 
 ```json
 {
@@ -182,7 +191,7 @@ Response:
 
 ### Export
 
-**GET /records/export**
+**GET /api/records/export**
 
 Returns:
 - CSV file download
@@ -258,11 +267,10 @@ npm run dev
 
 ## API Documentation
 
-Available at:
+With the server running (default port `3000`):
 
-```
-/api-docs
-```
+- **Swagger UI:** `http://localhost:3000/api/docs`
+- **OpenAPI JSON:** `http://localhost:3000/api/openapi.json`
 
 ---
 
