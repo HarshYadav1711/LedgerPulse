@@ -326,6 +326,55 @@ With the server running (default port `3000`):
 
 ---
 
+## Error Handling
+
+Errors use the same `{ success, data, error }` envelope as successes:
+
+**400 — validation (Zod)**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Validation failed",
+    "code": "VALIDATION_ERROR",
+    "details": {
+      "formErrors": [],
+      "fieldErrors": { "email": ["Invalid email"] }
+    }
+  }
+}
+```
+
+**401 — not authenticated**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Missing or invalid Authorization header",
+    "code": "UNAUTHORIZED"
+  }
+}
+```
+
+**403 — authenticated, not allowed (RBAC)**
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "message": "Insufficient permissions for this resource",
+    "code": "FORBIDDEN"
+  }
+}
+```
+
+---
+
 ## Design Decisions
 
 - Modular monolith to balance simplicity and scalability
