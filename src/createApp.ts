@@ -1,5 +1,4 @@
 import express from "express";
-import swaggerUi from "swagger-ui-express";
 import { errorHandler } from "./middleware/errorHandler";
 import { notFoundHandler } from "./middleware/notFound";
 import { authRouter } from "./modules/auth";
@@ -7,6 +6,7 @@ import { dashboardRouter } from "./modules/dashboard";
 import { recordsRouter } from "./modules/records";
 import { usersRouter } from "./modules/users";
 import { createSwaggerSpec } from "./swagger";
+import { swaggerUiCdnHandler } from "./swaggerUiCdn";
 import { sendSuccess } from "./utils/http";
 
 export function createApp() {
@@ -20,7 +20,9 @@ export function createApp() {
   });
 
   const openApiSpec = createSwaggerSpec();
-  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: "LedgerPulse API" }));
+  const swaggerPage = swaggerUiCdnHandler();
+  app.get("/api/docs", swaggerPage);
+  app.get("/api/docs/", swaggerPage);
   app.get("/api/openapi.json", (_req, res) => {
     res.status(200).json(openApiSpec);
   });

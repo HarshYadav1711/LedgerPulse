@@ -1,5 +1,5 @@
 /**
- * OpenAPI 3.0 document (served by swagger-ui-express).
+ * OpenAPI 3.0 document (JSON at `/api/openapi.json`; Swagger UI at `/api/docs` via CDN).
  * Paths are absolute from the server root (e.g. `/api/health`).
  */
 

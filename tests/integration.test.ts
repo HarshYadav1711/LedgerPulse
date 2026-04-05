@@ -331,4 +331,11 @@ describe("LedgerPulse integration", () => {
     expect(res.body.openapi).toBe("3.0.0");
     expect(res.body.paths["/api/health"]).toBeDefined();
   });
+
+  it("GET /api/docs serves Swagger UI HTML (CDN assets; works on Vercel)", async () => {
+    const res = await request(app).get("/api/docs").expect(200);
+    expect(res.type).toMatch(/html/);
+    expect(res.text).toContain("swagger-ui");
+    expect(res.text).toContain("/api/openapi.json");
+  });
 });
