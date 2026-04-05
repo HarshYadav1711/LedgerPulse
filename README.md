@@ -296,11 +296,26 @@ git clone <repo-url>
 cd ledgerpulse
 npm install
 cp .env.example .env
-npx prisma migrate dev
 npm run dev
 ```
 
-`npm run dev` applies pending migrations (`migrate deploy`), then starts the API with **nodemon** + **tsx** (TypeScript directly from `src/`, reload on `.ts` changes). No separate build step or second terminal.
+`npm run dev` syncs the DB (see **Database setup**), then starts the API with **nodemon** + **tsx** (reload on `.ts` changes).
+
+---
+
+## Database setup
+
+| Environment | Engine | Role |
+|---------------|--------|------|
+| **Local development** | **SQLite** | Default in `.env.example`: single file DB, no Postgres install. |
+| **Production** | **PostgreSQL** | Hosted DB (e.g. Supabase, Neon, RDS). Required for Vercel — see **Deploying to Vercel**. |
+
+**Switch via `.env` (or your host’s env UI):** set **`DB_PROVIDER`** and **`DATABASE_URL` together**.
+
+- **SQLite:** `DB_PROVIDER=sqlite` and `DATABASE_URL="file:./dev.db"` (path is relative to the project root; adjust if you use another file).
+- **PostgreSQL:** `DB_PROVIDER=postgresql` and `DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB?schema=public"` (add `?sslmode=require` if your provider needs it).
+
+Committed migration SQL targets **PostgreSQL**. For SQLite, `npm run dev`, `db:seed`, etc. run **`prisma db push`** through `scripts/migrate-or-push.js`. For PostgreSQL, they run **`prisma migrate deploy`**. Always use **`npm run …`** or **`node scripts/run-prisma.js …`** so `sync-datasource-provider.js` runs first (keeps `schema.prisma` and `migration_lock.toml` in sync; avoids **P3019**). Raw **`npx prisma`** skips that sync unless you run sync yourself.
 
 ---
 
@@ -308,12 +323,10 @@ npm run dev
 
 | Variable | Description |
 |----------|-------------|
-| `DB_PROVIDER` | `sqlite` (default) or `postgresql`. Drives the Prisma datasource **before** CLI runs (Prisma forbids `provider = env(...)` in `schema.prisma`; see `scripts/sync-datasource-provider.js`). |
-| `DATABASE_URL` | SQLite: `file:./dev.db`. PostgreSQL: `postgresql://USER:PASSWORD@HOST:PORT/DB?schema=public` |
+| `DB_PROVIDER` | `sqlite` (local default) or `postgresql` (production). Synced into `schema.prisma` before Prisma runs — see **Database setup**. |
+| `DATABASE_URL` | SQLite: `file:./dev.db`. PostgreSQL: `postgresql://…` |
 | `JWT_SECRET` | ≥ 16 characters |
 | `PORT`, `NODE_ENV`, `BCRYPT_ROUNDS` | Optional; see `.env.example` |
-
-**PostgreSQL / SQLite:** SQL in `prisma/migrations/` is **PostgreSQL** (enums, `TIMESTAMP(3)`, etc.). With `DB_PROVIDER=postgresql`, `npm run dev` / `db:seed` run **`prisma migrate deploy`**. With **`DB_PROVIDER=sqlite`**, the same files cannot be applied, so the repo uses **`prisma db push`** for local file DBs (see `scripts/migrate-or-push.js`). `scripts/sync-datasource-provider.js` keeps `schema.prisma` and `migration_lock.toml` in sync so you do not hit **P3019**. Use `node scripts/run-prisma.js` or the npm scripts above so sync runs before Prisma; raw `npx prisma` skips sync unless you run `node scripts/sync-datasource-provider.js` first.
 
 ---
 
