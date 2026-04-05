@@ -4,10 +4,11 @@
   "private": true,
   "description": "LedgerPulse — modular finance API (Express, Prisma, JWT, RBAC)",
   "engines": {
-    "node": ">=24"
+    "node": ">=20"
   },
   "scripts": {
     "postinstall": "node scripts/prisma-generate.js",
+    "vercel-build": "node scripts/assert-vercel-postgres.js && node scripts/sync-datasource-provider.js && npx prisma generate && npm run build",
     "build": "npx tsc -p tsconfig.build.json && node scripts/copy-prisma-client-to-dist.js",
     "build:copy-client": "node scripts/copy-prisma-client-to-dist.js",
     "start": "node scripts/run-prisma.js migrate deploy && npm run build && node --env-file=.env dist/server.js",

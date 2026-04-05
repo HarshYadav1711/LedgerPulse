@@ -1,7 +1,9 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // Outside node_modules to avoid Windows EPERM when AV/indexers lock DLLs under node_modules\.prisma
-  output   = "../src/generated/prisma-client"
+  output        = "../src/generated/prisma-client"
+  // Vercel / Linux serverless (postinstall + local generate)
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 // Prisma forbids env() on `provider` (deterministic migrations). `DB_PROVIDER` in `.env` is applied

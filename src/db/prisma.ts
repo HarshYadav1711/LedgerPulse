@@ -5,15 +5,18 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 const log: ("error" | "warn")[] =
   process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test" ? ["error", "warn"] : ["error"];
 
-/** Reuse one client in dev (hot reload). Test/production get a normal module singleton without `globalThis`. */
-const useGlobalDevCache = process.env.NODE_ENV === "development";
+/**
+ * Reuse one client across hot reload (dev) and serverless warm invocations (e.g. Vercel).
+ * Tests use a fresh client per worker via NODE_ENV=test.
+ */
+const useGlobalCache = process.env.NODE_ENV !== "test";
 
 export const prisma =
-  (useGlobalDevCache ? globalForPrisma.prisma : undefined) ??
+  (useGlobalCache ? globalForPrisma.prisma : undefined) ??
   new PrismaClient({
     log,
   });
 
-if (useGlobalDevCache) {
+if (useGlobalCache) {
   globalForPrisma.prisma = prisma;
 }

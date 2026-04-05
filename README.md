@@ -131,10 +131,11 @@ Efficient aggregation at the database layer:
 ```json
 {
   "email": "user@example.com",
-  "password": "securepassword",
-  "role": "ADMIN"
+  "password": "securepassword"
 }
 ```
+
+*(Do not send `role`: the first user in the database becomes admin; later signups are viewers.)*
 
 ---
 
@@ -222,6 +223,31 @@ Returns:
 - JWT Authentication
 - Zod Validation
 - Swagger (OpenAPI)
+
+---
+
+## Deploying to Vercel
+
+This app runs as a **single serverless function** (`api/index.ts`) with rewrites from `vercel.json`. **SQLite (`file:…`) does not work** on Vercel: the filesystem is ephemeral and not shared across invocations. Use a **hosted PostgreSQL** database (Neon, Supabase, Vercel Postgres, etc.).
+
+1. Create a Postgres database and copy its connection string (`postgresql://…`).
+2. In the Vercel project → **Settings → Environment Variables**, add (for **Production**, **Preview**, and **Build**):
+   - `DB_PROVIDER` = `postgresql`
+   - `DATABASE_URL` = your `postgresql://…` URL (must not start with `file:`)
+   - `JWT_SECRET` = at least 16 characters
+   - `NODE_ENV` = `production` (optional; Vercel usually sets this)
+3. Apply migrations to that database **once** (from your machine or CI), for example:
+
+   ```bash
+   set DB_PROVIDER=postgresql
+   set DATABASE_URL=postgresql://USER:PASSWORD@HOST/DB?schema=public
+   node scripts/sync-datasource-provider.js
+   npx prisma migrate deploy
+   ```
+
+4. Redeploy. The build runs `npm run vercel-build`, which checks Vercel + Postgres, syncs the Prisma datasource, runs `prisma generate`, then compiles the app.
+
+Local development can stay on SQLite; only Vercel (where `VERCEL=1`) enforces Postgres for the build.
 
 ---
 
