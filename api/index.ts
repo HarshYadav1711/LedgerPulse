@@ -1,4 +1,4 @@
-import { createApp } from "../src/app";
+import { createApp } from "../src/createApp";
 
 /**
  * Vercel serverless entry: all traffic is rewritten here (see `vercel.json`).

@@ -4,7 +4,7 @@ import path from "path";
 import bcrypt from "bcryptjs";
 import request from "supertest";
 import { Role } from "../src/db/client";
-import { createApp } from "../src/app";
+import { createApp } from "../src/createApp";
 import { prisma } from "../src/db/prisma";
 
 jest.setTimeout(60_000);

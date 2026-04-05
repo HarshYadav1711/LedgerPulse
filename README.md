@@ -228,7 +228,9 @@ Returns:
 
 ## Deploying to Vercel
 
-This app runs as a **single serverless function** (`api/index.ts`) with rewrites from `vercel.json`. **SQLite (`file:…`) does not work** on Vercel: the filesystem is ephemeral and not shared across invocations. Use a **hosted PostgreSQL** database (Neon, Supabase, Vercel Postgres, etc.).
+This app runs as a **single serverless function** (`api/index.ts`) with rewrites from `vercel.json`. Express is wired in **`src/createApp.ts`** (not `src/app.ts`): Vercel treats `src/app` like a Next.js entry and expects a **default export** that is a function, which caused `Invalid export found in module "/var/task/src/app.js"` when the file only exported `createApp` by name.
+
+**SQLite (`file:…`) does not work** on Vercel: the filesystem is ephemeral and not shared across invocations. Use a **hosted PostgreSQL** database (Neon, Supabase, Vercel Postgres, etc.).
 
 1. Create a Postgres database and copy its connection string (`postgresql://…`).
 2. In the Vercel project → **Settings → Environment Variables**, add (for **Production**, **Preview**, and **Build**):
