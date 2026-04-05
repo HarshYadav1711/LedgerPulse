@@ -305,7 +305,7 @@ npm run dev
 | `JWT_SECRET` | ≥ 16 characters |
 | `PORT`, `NODE_ENV`, `BCRYPT_ROUNDS` | Optional; see `.env.example` |
 
-**PostgreSQL notes:** Migrations in `prisma/migrations/` are **SQLite-specific**. For Postgres, point `DATABASE_URL` at an empty database, set `DB_PROVIDER=postgresql`, run `npm run prisma:generate`, then **`npm run db:push`** to create tables (or author Postgres migrations separately). Use `node scripts/run-prisma.js` or npm scripts (`db:migrate`, `db:seed`, …) so the provider sync runs; raw `npx prisma` skips sync unless you run `node scripts/sync-datasource-provider.js` first.
+**PostgreSQL / SQLite:** SQL in `prisma/migrations/` is **PostgreSQL** (enums, `TIMESTAMP(3)`, etc.). With `DB_PROVIDER=postgresql`, `npm run dev` / `db:seed` run **`prisma migrate deploy`**. With **`DB_PROVIDER=sqlite`**, the same files cannot be applied, so the repo uses **`prisma db push`** for local file DBs (see `scripts/migrate-or-push.js`). `scripts/sync-datasource-provider.js` keeps `schema.prisma` and `migration_lock.toml` in sync so you do not hit **P3019**. Use `node scripts/run-prisma.js` or the npm scripts above so sync runs before Prisma; raw `npx prisma` skips sync unless you run `node scripts/sync-datasource-provider.js` first.
 
 ---
 

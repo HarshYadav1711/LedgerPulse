@@ -16,10 +16,10 @@ function email(prefix: string) {
 const app = createApp();
 
 beforeAll(() => {
-  execSync("node scripts/run-prisma.js migrate deploy", {
+  execSync("node scripts/migrate-or-push.js", {
     cwd: path.join(__dirname, ".."),
     stdio: "inherit",
-    env: process.env,
+    env: { ...process.env, PRISMA_DB_PUSH_ACCEPT_LOSS: "1" },
   });
 });
 
