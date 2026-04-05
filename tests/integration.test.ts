@@ -19,7 +19,11 @@ beforeAll(() => {
   execSync("node scripts/migrate-or-push.js", {
     cwd: path.join(__dirname, ".."),
     stdio: "inherit",
-    env: { ...process.env, PRISMA_DB_PUSH_ACCEPT_LOSS: "1" },
+    env: {
+      ...process.env,
+      PRISMA_DB_PUSH_ACCEPT_LOSS: "1",
+      LEDGERPULSE_SKIP_PRISMA_GENERATE: "1",
+    },
   });
 });
 

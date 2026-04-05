@@ -15,14 +15,28 @@ const { syncDatasourceProvider, resolveProvider } = require("./sync-datasource-p
 syncDatasourceProvider();
 
 const root = path.join(__dirname, "..");
+
+/** Tests run `prisma generate` in setup; skipping here avoids a second run (Windows EPERM on query_engine DLL). */
+if (process.env.LEDGERPULSE_SKIP_PRISMA_GENERATE !== "1") {
+  const gen = spawnSync(process.execPath, [path.join(__dirname, "prisma-generate.js")], {
+    cwd: root,
+    stdio: "inherit",
+    env: process.env,
+  });
+  if (gen.status !== 0) {
+    process.exit(gen.status === null ? 1 : gen.status);
+  }
+}
+
 const provider = resolveProvider();
 const acceptLoss = process.env.PRISMA_DB_PUSH_ACCEPT_LOSS === "1";
+const skipGen = process.env.LEDGERPULSE_SKIP_PRISMA_GENERATE === "1";
 
 const args =
   provider === "sqlite"
     ? acceptLoss
-      ? ["db", "push", "--accept-data-loss"]
-      : ["db", "push"]
+      ? ["db", "push", "--accept-data-loss", ...(skipGen ? ["--skip-generate"] : [])]
+      : ["db", "push", ...(skipGen ? ["--skip-generate"] : [])]
     : ["migrate", "deploy"];
 
 const r = spawnSync("npx", ["prisma", ...args], {
