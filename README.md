@@ -249,6 +249,8 @@ This app runs as a **single serverless function** (`api/index.ts`) with rewrites
 
 Local development can stay on SQLite; only Vercel (where `VERCEL=1`) enforces Postgres for the build.
 
+**If the site returns `500` / `FUNCTION_INVOCATION_FAILED`:** open the deployment → **Functions** → **Logs**. Common causes: missing `JWT_SECRET` or `DATABASE_URL` on Vercel (set for **Production** and **Preview**, not only Build); password characters in the URL (`@` → `%40`). **Supabase + Vercel:** the direct host (`db.*.supabase.co:5432`) can be IPv6-only; use Supabase’s **connection pooler** URI (often port `6543`) and add `?pgbouncer=true` for Prisma if the dashboard recommends it.
+
 ---
 
 ## Database Design

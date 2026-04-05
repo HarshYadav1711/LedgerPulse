@@ -1,5 +1,5 @@
 /**
- * OpenAPI 3.0 document (consumed by swagger-jsdoc + swagger-ui-express).
+ * OpenAPI 3.0 document (served by swagger-ui-express).
  * Paths are absolute from the server root (e.g. `/api/health`).
  */
 
