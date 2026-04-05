@@ -4,7 +4,7 @@
   "private": true,
   "description": "LedgerPulse — modular finance API (Express, Prisma, JWT, RBAC)",
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "scripts": {
     "postinstall": "node scripts/prisma-generate.js",
