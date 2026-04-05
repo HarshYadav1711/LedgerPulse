@@ -228,7 +228,9 @@ Returns:
 
 ## Deploying to Vercel
 
-This app runs as a **single serverless function** (`api/index.ts`) with rewrites from `vercel.json`. Express is wired in **`src/createApp.ts`** (not `src/app.ts`): Vercel treats `src/app` like a Next.js entry and expects a **default export** that is a function, which caused `Invalid export found in module "/var/task/src/app.js"` when the file only exported `createApp` by name.
+This app runs as a **single serverless function** (`api/index.ts`) with rewrites from `vercel.json`. `vercel.json` sets **`"framework": null`** (“Other”) so Vercel does not run the Express preset scan that errors with “No entrypoint found which imports express.” The API file still imports `express` explicitly for compatibility if the dashboard preset is Express.
+
+Express is wired in **`src/createApp.ts`** (not `src/app.ts`): Vercel treats `src/app` like a Next.js entry and expects a **default export** that is a function, which caused `Invalid export found in module "/var/task/src/app.js"` when the file only exported `createApp` by name.
 
 **SQLite (`file:…`) does not work** on Vercel: the filesystem is ephemeral and not shared across invocations. Use a **hosted PostgreSQL** database (Neon, Supabase, Vercel Postgres, etc.).
 
