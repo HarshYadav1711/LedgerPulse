@@ -9,6 +9,8 @@ A role-aware financial data backend engineered for clarity, correctness, and ana
 
 LedgerPulse is a backend system built to manage financial records with strict role-based access control and deliver clean, aggregated data for dashboard consumption.
 
+**Live (production):** [API docs (Swagger UI)](https://ledger-pulse-eta.vercel.app/api/docs)
+
 The system emphasizes:
 - predictable data flow
 - strong access control guarantees
@@ -332,10 +334,10 @@ Committed migration SQL targets **PostgreSQL**. For SQLite, `npm run dev`, `db:s
 
 ## API Documentation
 
-With the server running (default port `3000`):
-
-- **Swagger UI:** `http://localhost:3000/api/docs`
-- **OpenAPI JSON:** `http://localhost:3000/api/openapi.json`
+| | Swagger UI | OpenAPI JSON |
+|--|------------|--------------|
+| **Local** (`npm run dev`, port `3000`) | [http://localhost:3000/api/docs](http://localhost:3000/api/docs) | [http://localhost:3000/api/openapi.json](http://localhost:3000/api/openapi.json) |
+| **Production (Vercel)** | [https://ledger-pulse-eta.vercel.app/api/docs](https://ledger-pulse-eta.vercel.app/api/docs) | [https://ledger-pulse-eta.vercel.app/api/openapi.json](https://ledger-pulse-eta.vercel.app/api/openapi.json) |
 
 ---
 
